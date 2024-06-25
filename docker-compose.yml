@@ -1,0 +1,38 @@
+version: "3.4"
+
+services:
+  db:
+    image: mariadb:10.6
+    environment:
+      - MYSQL_ROOT_PASSWORD=example
+      - MYSQL_MULTIPLE_DATABASES=keycloak
+    volumes:
+      - ./docker/mariadb:/docker-entrypoint-initdb.d
+    ports:
+      - 33006:3306
+    networks:
+      - keycloak_network
+
+  # -- authorization service --
+  keycloak:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - KC_HOSTNAME=keycloak
+      - KC_DB=mariadb
+      - KC_DB_URL=jdbc:mariadb://db:3306/keycloak
+      - KC_DB_USERNAME=root
+      - KC_DB_PASSWORD=example
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - PROXY_ADDRESS_FORWARDING=true
+    ports:
+      - "${KEYCLOAK_PORT}:8080"
+    depends_on:
+      - db
+    networks:
+      - keycloak_network
+
+networks:
+  keycloak_network:
